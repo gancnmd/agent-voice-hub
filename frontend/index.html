@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentVoiceHub — AI Voice Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎙️</text></svg>">
+</head>
+<body>
+
+    <!-- Particle Canvas Background -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- Scanline overlay -->
+    <div class="scanline-overlay"></div>
+
+    <!-- Main Layout -->
+    <div class="app-container">
+
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                            <circle cx="14" cy="14" r="12" stroke="#00d4ff" stroke-width="1.5" opacity="0.6"/>
+                            <circle cx="14" cy="14" r="7" stroke="#00d4ff" stroke-width="1.5"/>
+                            <circle cx="14" cy="14" r="2.5" fill="#00d4ff"/>
+                            <line x1="14" y1="2" x2="14" y2="6" stroke="#00d4ff" stroke-width="1.5"/>
+                            <line x1="14" y1="22" x2="14" y2="26" stroke="#00d4ff" stroke-width="1.5"/>
+                            <line x1="2" y1="14" x2="6" y2="14" stroke="#00d4ff" stroke-width="1.5"/>
+                            <line x1="22" y1="14" x2="26" y2="14" stroke="#00d4ff" stroke-width="1.5"/>
+                        </svg>
+                    </div>
+                    <span class="logo-text">AgentVoiceHub</span>
+                </div>
+            </div>
+            <div class="top-bar-center">
+                <div class="agent-selector">
+                    <button class="agent-btn active" data-agent="openclaw">OpenClaw</button>
+                    <button class="agent-btn" data-agent="hermes">Hermes</button>
+                    <button class="agent-btn" data-agent="custom">Custom</button>
+                </div>
+            </div>
+            <div class="top-bar-right">
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </div>
+                <button class="icon-btn" id="settingsBtn" title="Settings (Ctrl+,)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- Chat Area -->
+            <div class="chat-area" id="chatArea">
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Welcome message -->
+                    <div class="welcome-screen" id="welcomeScreen">
+                        <div class="welcome-icon">
+                            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                                <circle cx="32" cy="32" r="28" stroke="#00d4ff" stroke-width="1" opacity="0.3"/>
+                                <circle cx="32" cy="32" r="20" stroke="#00d4ff" stroke-width="1" opacity="0.5"/>
+                                <circle cx="32" cy="32" r="12" stroke="#00d4ff" stroke-width="1.5"/>
+                                <circle cx="32" cy="32" r="4" fill="#00d4ff"/>
+                            </svg>
+                        </div>
+                        <h2 class="welcome-title">AgentVoiceHub</h2>
+                        <p class="welcome-subtitle">Voice-controlled AI assistant interface</p>
+                        <div class="welcome-hints">
+                            <div class="hint-item">
+                                <kbd>Space</kbd>
+                                <span>Hold to talk</span>
+                            </div>
+                            <div class="hint-item">
+                                <kbd>Ctrl+K</kbd>
+                                <span>Quick command</span>
+                            </div>
+                            <div class="hint-item">
+                                <kbd>Esc</kbd>
+                                <span>Stop speaking</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voice Visualization -->
+            <div class="voice-viz-container" id="voiceVizContainer">
+                <canvas id="voiceVizCanvas" width="400" height="60"></canvas>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <div class="input-row">
+                    <div class="text-input-wrapper">
+                        <input type="text" id="textInput" class="text-input" placeholder="Type a message or press Space to talk..." autocomplete="off">
+                        <button class="send-btn" id="sendBtn" title="Send message">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="input-controls">
+                    <div class="controls-left">
+                        <select id="voiceSelect" class="voice-select">
+                            <option value="">Default Voice</option>
+                        </select>
+                    </div>
+                    <div class="controls-center">
+                        <button class="mic-btn" id="micBtn" title="Hold Space or click to talk">
+                            <div class="mic-pulse-ring"></div>
+                            <div class="mic-pulse-ring delay"></div>
+                            <div class="mic-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                                </svg>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="controls-right">
+                        <div class="latency-display" id="latencyDisplay">
+                            <span class="latency-label">Latency</span>
+                            <span class="latency-value" id="latencyValue">--ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-overlay" id="settingsOverlay"></div>
+    <aside class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <h3>Settings</h3>
+            <button class="icon-btn" id="settingsCloseBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="settings-body">
+            <div class="settings-section">
+                <h4 class="settings-section-title">Connection</h4>
+                <div class="settings-field">
+                    <label for="wsUrl">WebSocket URL</label>
+                    <input type="text" id="wsUrl" class="settings-input" value="ws://localhost:8765/ws" placeholder="ws://localhost:8765/ws">
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4 class="settings-section-title">Voice</h4>
+                <div class="settings-field">
+                    <label for="settingsVoice">TTS Voice</label>
+                    <select id="settingsVoice" class="settings-input"></select>
+                </div>
+                <div class="settings-field">
+                    <label for="voiceRate">Speech Rate</label>
+                    <div class="range-wrapper">
+                        <input type="range" id="voiceRate" class="settings-range" min="0.5" max="2" step="0.1" value="1">
+                        <span class="range-value" id="voiceRateValue">1.0x</span>
+                    </div>
+                </div>
+                <div class="settings-field">
+                    <label for="voicePitch">Pitch</label>
+                    <div class="range-wrapper">
+                        <input type="range" id="voicePitch" class="settings-range" min="0" max="2" step="0.1" value="1">
+                        <span class="range-value" id="voicePitchValue">1.0</span>
+                    </div>
+                </div>
+                <div class="settings-field">
+                    <label class="toggle-label">
+                        <span>Auto-speak responses</span>
+                        <input type="checkbox" id="autoSpeak" class="toggle-input" checked>
+                        <span class="toggle-switch"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4 class="settings-section-title">Recognition</h4>
+                <div class="settings-field">
+                    <label for="recognitionLang">Language</label>
+                    <select id="recognitionLang" class="settings-input">
+                        <option value="en-US">English (US)</option>
+                        <option value="en-GB">English (UK)</option>
+                        <option value="es-ES">Spanish</option>
+                        <option value="fr-FR">French</option>
+                        <option value="de-DE">German</option>
+                        <option value="ja-JP">Japanese</option>
+                        <option value="zh-CN">Chinese</option>
+                    </select>
+                </div>
+                <div class="settings-field">
+                    <label class="toggle-label">
+                        <span>Continuous listening</span>
+                        <input type="checkbox" id="continuousListening" class="toggle-input">
+                        <span class="toggle-switch"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h4 class="settings-section-title">Appearance</h4>
+                <div class="settings-field">
+                    <label class="toggle-label">
+                        <span>Particle effects</span>
+                        <input type="checkbox" id="particleEffects" class="toggle-input" checked>
+                        <span class="toggle-switch"></span>
+                    </label>
+                </div>
+                <div class="settings-field">
+                    <label class="toggle-label">
+                        <span>Sound effects</span>
+                        <input type="checkbox" id="soundEffects" class="toggle-input" checked>
+                        <span class="toggle-switch"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <button class="settings-btn danger" id="clearChatBtn">Clear Chat History</button>
+                <button class="settings-btn" id="exportChatBtn">Export Chat</button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Toast container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
